@@ -10,6 +10,26 @@ socket.on('paint-splatter-control', function(msg){
 	console.log("message received " + msg);
 	//document.body.innerHTML += "<p>"+msg+"</p>";
 	let data = JSON.parse(msg);
+	splatter(data);
+	splatter(data);
+});
+//==============================================================================================
+//END OF WEBSOCKET STUFF
+//==============================================================================================
+
+/*window.onload = function() {
+	for (let i = 0; i < 20; i++) {
+		splatterPaint(Math.random() * 360,100,50);
+	}
+}*/
+
+var logo;
+var logoRatio = 3952.0/697.0;
+var logoW = window.innerWidth/2;
+var logoH = logoW/logoRatio;
+var numSplats = 0;
+
+function splatter(data) {
 	var offsetX, offsetY;
 	if (data.axis == "z" && data.dir == 1) {
 		offsetX = Math.random() * window.innerWidth;
@@ -28,27 +48,12 @@ socket.on('paint-splatter-control', function(msg){
 		offsetY = Math.random() * window.innerHeight;
 	}
 	splatterPaint(offsetX, offsetY, data.colorH, data.colorS, data.colorL);
-});
-//==============================================================================================
-//END OF WEBSOCKET STUFF
-//==============================================================================================
-
-/*window.onload = function() {
-	for (let i = 0; i < 20; i++) {
-		splatterPaint(Math.random() * 360,100,50);
-	}
-}*/
-
-var logo;
-var logoRatio = 3952.0/697.0;
-var logoW = window.innerWidth/2;
-var logoH = logoW/logoRatio;
-var numSplats = 0;
+}
 
 function splatterPaint(offsetX, offsetY, h,s,l) {
 
-	let xRadius = Math.random() * 20 + 20; //20-40
-	let yRadius = Math.random() * 20 + 20; //20-40
+	let xRadius = Math.random() * 40 + 40; //40-80
+	let yRadius = Math.random() * 40 + 40; //40-80
 
 	splatShape(.1, offsetX, offsetY, xRadius, yRadius, h,s,l);
 
@@ -59,8 +64,8 @@ function splatterPaint(offsetX, offsetY, h,s,l) {
 		var newOffsetX, newOffsetY;
 		var xDir = Math.random() > 0.5 ? 1 : -1;
 		var yDir = Math.random() > 0.5 ? 1 : -1;
-		newOffsetX = offsetX + 40 * (xDir) + Math.random() * range/2
-		newOffsetY = offsetY + 40 * (yDir) + Math.random() * range/2;
+		newOffsetX = offsetX + 80 * (xDir) + Math.random() * range/2
+		newOffsetY = offsetY + 80 * (yDir) + Math.random() * range/2;
 		splatShape(.05, newOffsetX, newOffsetY, newXRadius, newYRadius, h,s,l);
 	}
 
@@ -85,7 +90,9 @@ function splatShape(noiseIncr, offsetX, offsetY, xRadius, yRadius, h,s,l) {
 	//blendMode(BLEND);
 	stroke(0,0,0,0);
 
-	for(var degree = 0; degree < 360; degree += 10) {
+	Math.random() > 0.5 ? xRadius*=0.75 : yRadius*=0.75;
+
+	for(var degree = 0; degree < 360; degree += 8) {
 		let x = offsetX + cos(radians(degree)) * xRadius + noise(noiseStep) * xRadius;
 		let y = offsetY + sin(radians(degree)) * yRadius + noise(noiseStep) * yRadius;
 		vertex(x, y);
