@@ -1,8 +1,10 @@
+const controllerURL = 'http://outernets-app-paint-splatter-controller-dev.s3-website-us-west-2.amazonaws.com';
+
 //==============================================================================================
 //WEBSOCKET STUFF
 //==============================================================================================
 var socket = io('http://app-chat-room-server-dev.us-east-2.elasticbeanstalk.com');
-var roomToJoin = "app-paint-splatter";
+var roomToJoin = uuidv1();
 console.log("joining room ..." + roomToJoin + "...");
 socket.emit('roomToJoin', roomToJoin);
 
@@ -17,11 +19,13 @@ socket.on('paint-splatter-control', function(msg){
 //END OF WEBSOCKET STUFF
 //==============================================================================================
 
-/*window.onload = function() {
-	for (let i = 0; i < 20; i++) {
-		splatterPaint(Math.random() * 360,100,50);
-	}
-}*/
+window.onload = function() {
+	new QRCode(document.getElementById("qr-code"), `${controllerURL}/?id=${roomToJoin}`);
+
+	document.getElementById("qr-code").style.left = (window.innerWidth/2 - 100)+"px";
+	document.getElementById("qr-code").style.top = (window.innerHeight/2 + 100)+"px";
+	document.getElementById("qr-code").style.visibility = "visible";
+}
 
 var logo;
 var logoRatio = 3952.0/697.0;
@@ -76,8 +80,6 @@ function splatterPaint(offsetX, offsetY, h,s,l) {
 
 	if (numSplats > 30) {
 		document.getElementById("qr-code").style.visibility = "hidden";
-	    document.getElementById("scan-to-play").style.visibility = "hidden";
-	    document.getElementById("link").style.visibility = "hidden";
 	}
 }
 
