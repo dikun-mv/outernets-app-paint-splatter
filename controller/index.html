@@ -89,7 +89,7 @@
 	//ACCELEROMETER STUFF
 	//=======================
 	var socket = io('http://app-chat-room-server-dev.us-east-2.elasticbeanstalk.com');
-	var roomToJoin = window.location.search.split('=')[1];
+	var roomToJoin = window.location.search.slice(1);
 	console.log("joining room ..." + roomToJoin + "...");
 	socket.emit('roomToJoin', roomToJoin);
 
