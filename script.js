@@ -13,14 +13,12 @@ function connect(url) {
 
 	socket.session = {
 		id: uuidv1(),
-		isConnected: false,
 		openedAt: null,
 		closedAt: null,
 		timer: null
 	};
 
 	socket.on('user-connected', () => {
-		if (socket.session.isConnected) {
 			socket.session.openedAt = Number(new Date());
 
 			document.getElementById("qr-code").innerHTML = "";
@@ -28,13 +26,9 @@ function connect(url) {
 			if (!socket.session.timer) {
 				socket.session.timer = setTimeout(refresh, 30 * 1000);
 			}
-		} else {
-			socket.session.isConnected = true;
-		}
 	});
 
 	socket.on('user-disconnected', () => {
-		if (socket.session.isConnected) {
 			socket.session.closedAt = Number(new Date());
 
 			if (window.outernets) {
@@ -58,7 +52,6 @@ function connect(url) {
 			} else {
 				refresh();
 			}
-		}
 	});
 
 	socket.on('paint-splatter-control', (data) => {
