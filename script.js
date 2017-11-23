@@ -4,6 +4,13 @@ const serverURL = 'http://app-chat-room-server-dev.us-east-2.elasticbeanstalk.co
 function connect(url) {
 	const socket = io(url);
 
+	const refresh = () => {
+		socket.disconnect();
+		window.onload();
+		noCanvas();
+		setup();
+	};
+
 	socket.session = {
 		id: uuidv1(),
 		isConnected: false,
@@ -30,9 +37,9 @@ function connect(url) {
 						id: socket.session.id,
 						duration: socket.session.closedAt - socket.session.openedAt
 					}
-				}).then(() => window.location.reload(), () => window.location.reload());
+				}).then(refresh, refresh);
 			} else {
-				window.location.reload();
+				refresh();
 			}
 		}
 	});
@@ -96,7 +103,7 @@ function splatterPaint(offsetX, offsetY, h, s, l) {
 	numSplats++;
 
 	if (numSplats > 0) {
-		document.getElementById("qr-code").style.visibility = "hidden";
+		document.getElementById("qr-code").innerHTML = "";
 	}
 }
 
