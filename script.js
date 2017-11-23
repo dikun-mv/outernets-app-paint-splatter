@@ -15,12 +15,19 @@ function connect(url) {
 		id: uuidv1(),
 		isConnected: false,
 		openedAt: null,
-		closedAt: null
+		closedAt: null,
+		timer: null
 	};
 
 	socket.on('user-connected', () => {
 		if (socket.session.isConnected) {
 			socket.session.openedAt = Number(new Date());
+
+			document.getElementById("qr-code").innerHTML = "";
+
+			if (!socket.session.timer) {
+				socket.session.timer = setTimeout(refresh, 30 * 1000);
+			}
 		} else {
 			socket.session.isConnected = true;
 		}
@@ -32,11 +39,21 @@ function connect(url) {
 
 			if (window.outernets) {
 				window.outernets.sendSnapshotAsync({
-					metric: 'SESSION_DURATION',
-					data: {
-						id: socket.session.id,
-						duration: socket.session.closedAt - socket.session.openedAt
-					}
+					id: socket.session.id,
+					metrics: [
+						{
+							name: 'session duration',
+							value: socket.session.closedAt - socket.session.openedAt
+						},
+						{
+							name: 'number of splashes',
+							value: numSplats
+						},
+						{
+							name: 'number of colors',
+							value: colors.length
+						}
+					]
 				}).then(refresh, refresh);
 			} else {
 				refresh();
@@ -47,6 +64,11 @@ function connect(url) {
 	socket.on('paint-splatter-control', (data) => {
 		splatter(JSON.parse(data));
 		splatter(JSON.parse(data));
+
+		if (socket.session.timer) {
+			clearTimeout(socket.session.timer);
+			socket.session.timer = setTimeout(refresh, 30 * 1000);
+		}
 	});
 
 	socket.emit('roomToJoin', socket.session.id);
@@ -58,26 +80,38 @@ let logo;
 let logoRatio = 3952.0 / 697.0;
 let logoW = window.innerWidth / 2;
 let logoH = logoW / logoRatio;
+
 let numSplats = 0;
+let colors = [];
 
 function splatter(data) {
 	let offsetX, offsetY;
+
 	if (data.axis == "z" && data.dir == 1) {
 		offsetX = Math.random() * window.innerWidth;
 		offsetY = Math.random() * window.innerHeight * 0.5;
 	}
+
 	if (data.axis == "x" && data.dir == 1) {
 		offsetX = Math.random() * window.innerWidth * 0.5 + window.innerWidth * 0.5;
 		offsetY = Math.random() * window.innerHeight;
 	}
+
 	if (data.axis == "z" && data.dir == -1) {
 		offsetX = Math.random() * window.innerWidth;
 		offsetY = Math.random() * window.innerHeight * 0.5 + window.innerHeight * 0.5;
 	}
+
 	if (data.axis == "x" && data.dir == -1) {
 		offsetX = Math.random() * window.innerWidth * 0.5;
 		offsetY = Math.random() * window.innerHeight;
 	}
+
+	colors = colors.reduce(
+		(acc, color) => acc.includes(color) ? acc : acc.concat([color]),
+		[`${data.colorH}:${data.colorS}:${data.colorL}`]
+	);
+
 	splatterPaint(offsetX, offsetY, data.colorH, data.colorS, data.colorL);
 }
 
@@ -101,10 +135,6 @@ function splatterPaint(offsetX, offsetY, h, s, l) {
 
 	image(logo, window.innerWidth / 2 - logoW / 2, window.innerHeight / 2 - logoH / 2, logoW, logoH);
 	numSplats++;
-
-	if (numSplats > 0) {
-		document.getElementById("qr-code").innerHTML = "";
-	}
 }
 
 function splatShape(noiseIncr, offsetX, offsetY, xRadius, yRadius, h, s, l) {
