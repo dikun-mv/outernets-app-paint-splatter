@@ -1,15 +1,62 @@
 const controllerURL = 'http://outernets-app-paint-splatter-controller-dev.s3-website-us-west-2.amazonaws.com';
 const serverURL = 'http://app-chat-room-server-dev.us-east-2.elasticbeanstalk.com';
 
+function refresh(socket) {
+	socket.disconnect();
+	window.onload();
+	noCanvas();
+	setup();
+}
+
+function onConnect(socket) {
+	socket.session.openedAt = Number(new Date());
+
+	document.getElementById("qr-code").innerHTML = "";
+
+	if (!socket.session.timer) {
+		socket.session.timer = setTimeout(refresh.bind(null, socket), 30 * 1000);
+	}
+}
+
+function onDisconnect(socket) {
+	socket.session.closedAt = Number(new Date());
+
+	clearTimeout(socket.session.timer);
+
+	if (window.outernets) {
+		window.outernets.sendSnapshotAsync({
+			id: socket.session.id,
+			metrics: [
+				{
+					name: 'session duration',
+					value: socket.session.closedAt - socket.session.openedAt
+				},
+				{
+					name: 'number of splashes',
+					value: numSplats
+				},
+				{
+					name: 'number of colors',
+					value: colors.length
+				}
+			]
+		}).then(refresh.bind(null, socket), refresh.bind(null, socket));
+	} else {
+		refresh(socket);
+	}
+}
+
+function onData(socket, data) {
+	splatter(JSON.parse(data));
+
+	if (socket.session.timer) {
+		clearTimeout(socket.session.timer);
+		socket.session.timer = setTimeout(onDisconnect.bind(null, socket), 30 * 1000);
+	}
+}
+
 function connect(url) {
 	const socket = io(url);
-
-	const refresh = () => {
-		socket.disconnect();
-		window.onload();
-		noCanvas();
-		setup();
-	};
 
 	socket.session = {
 		id: uuidv1(),
@@ -18,51 +65,9 @@ function connect(url) {
 		timer: null
 	};
 
-	socket.on('user-connected', () => {
-			socket.session.openedAt = Number(new Date());
-
-			document.getElementById("qr-code").innerHTML = "";
-
-			if (!socket.session.timer) {
-				socket.session.timer = setTimeout(refresh, 30 * 1000);
-			}
-	});
-
-	socket.on('user-disconnected', () => {
-			socket.session.closedAt = Number(new Date());
-
-			if (window.outernets) {
-				window.outernets.sendSnapshotAsync({
-					id: socket.session.id,
-					metrics: [
-						{
-							name: 'session duration',
-							value: socket.session.closedAt - socket.session.openedAt
-						},
-						{
-							name: 'number of splashes',
-							value: numSplats
-						},
-						{
-							name: 'number of colors',
-							value: colors.length
-						}
-					]
-				}).then(refresh, refresh);
-			} else {
-				refresh();
-			}
-	});
-
-	socket.on('paint-splatter-control', (data) => {
-		splatter(JSON.parse(data));
-		splatter(JSON.parse(data));
-
-		if (socket.session.timer) {
-			clearTimeout(socket.session.timer);
-			socket.session.timer = setTimeout(refresh, 30 * 1000);
-		}
-	});
+	socket.on('user-connected', onConnect.bind(null, socket));
+	socket.on('user-disconnected', onDisconnect.bind(null, socket));
+	socket.on('paint-splatter-control', onData.bind(null, socket));
 
 	socket.emit('roomToJoin', socket.session.id);
 
@@ -105,6 +110,7 @@ function splatter(data) {
 		[`${data.colorH}:${data.colorS}:${data.colorL}`]
 	);
 
+	splatterPaint(offsetX, offsetY, data.colorH, data.colorS, data.colorL);
 	splatterPaint(offsetX, offsetY, data.colorH, data.colorS, data.colorL);
 }
 
