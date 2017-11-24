@@ -23,27 +23,23 @@ function onDisconnect(socket) {
 
 	clearTimeout(socket.session.timer);
 
-	if (window.outernets) {
-		window.outernets.sendSnapshotAsync({
-			id: socket.session.id,
-			metrics: [
-				{
-					name: 'session duration',
-					value: socket.session.closedAt - socket.session.openedAt
-				},
-				{
-					name: 'number of splashes',
-					value: numSplats
-				},
-				{
-					name: 'number of colors',
-					value: colors.length
-				}
-			]
-		}).then(refresh.bind(null, socket), refresh.bind(null, socket));
-	} else {
-		refresh(socket);
-	}
+	Outernets.sendMetrics({
+		id: socket.session.id,
+		metrics: [
+			{
+				name: 'session duration',
+				value: socket.session.closedAt - socket.session.openedAt
+			},
+			{
+				name: 'number of splashes',
+				value: numSplats
+			},
+			{
+				name: 'number of colors',
+				value: colors.length
+			}
+		]
+	}).then(refresh.bind(null, socket), refresh.bind(null, socket));
 }
 
 function onData(socket, data) {
