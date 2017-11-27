@@ -51,7 +51,7 @@
 				})
 			}
 		}
-		
+
 	}
 
 	function draw() {
@@ -89,7 +89,7 @@
 	//ACCELEROMETER STUFF
 	//=======================
 	var socket = io('http://app-chat-room-server-dev.us-east-2.elasticbeanstalk.com');
-	var roomToJoin = "app-paint-splatter";
+	var roomToJoin = window.location.search.slice(1);
 	console.log("joining room ..." + roomToJoin + "...");
 	socket.emit('roomToJoin', roomToJoin);
 
