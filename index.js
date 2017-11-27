@@ -27,15 +27,15 @@ function onDisconnect(socket) {
 		id: socket.session.id,
 		metrics: [
 			{
-				name: 'session duration',
+				name: 'session_duration',
 				value: socket.session.closedAt - socket.session.openedAt
 			},
 			{
-				name: 'number of splashes',
+				name: 'number_of_splashes',
 				value: numSplats
 			},
 			{
-				name: 'number of colors',
+				name: 'number_of_colors',
 				value: colors.length
 			}
 		]
@@ -49,6 +49,8 @@ function onData(socket, data) {
 		clearTimeout(socket.session.timer);
 		socket.session.timer = setTimeout(onDisconnect.bind(null, socket), 30 * 1000);
 	}
+
+	Outernets.holdScheduler(10);
 }
 
 function connect(url) {
