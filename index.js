@@ -1,5 +1,6 @@
 const controllerURL = 'http://outernets-app-paint-splatter-controller-dev.s3-website-us-west-2.amazonaws.com';
 const serverURL = 'http://app-chat-room-server-dev.us-east-2.elasticbeanstalk.com';
+let clients = 0;
 
 function refresh(socket) {
 	socket.disconnect();
@@ -9,9 +10,12 @@ function refresh(socket) {
 }
 
 function onConnect(socket) {
+	clients++;
 	socket.session.openedAt = Number(new Date());
 
-	document.getElementById("qr-code").innerHTML = "";
+	if (clients > 1) {
+		document.getElementById("qr-code").innerHTML = "";
+	}
 
 	if (!socket.session.timer) {
 		socket.session.timer = setTimeout(refresh.bind(null, socket), 30 * 1000);
@@ -19,27 +23,25 @@ function onConnect(socket) {
 }
 
 function onDisconnect(socket) {
+	clients = 0;
 	socket.session.closedAt = Number(new Date());
 
 	clearTimeout(socket.session.timer);
 
-	Outernets.sendMetrics({
-		id: socket.session.id,
-		metrics: [
-			{
-				name: 'session_duration',
-				value: socket.session.closedAt - socket.session.openedAt
-			},
-			{
-				name: 'number_of_splashes',
-				value: numSplats
-			},
-			{
-				name: 'number_of_colors',
-				value: colors.length
-			}
-		]
-	}).then(refresh.bind(null, socket), refresh.bind(null, socket));
+	Outernets.sendMetrics([
+		{
+			name: 'session_duration',
+			value: socket.session.closedAt - socket.session.openedAt
+		},
+		{
+			name: 'number_of_splashes',
+			value: numSplats
+		},
+		{
+			name: 'number_of_colors',
+			value: colors.length
+		}
+	]).then(refresh.bind(null, socket), refresh.bind(null, socket));
 }
 
 function onData(socket, data) {
